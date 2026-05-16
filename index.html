@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Information Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-label="로그인">
+        <div class="auth-card">
+            <div id="auth-login-panel">
+                <h2 class="auth-title">로그인</h2>
+                <p class="auth-desc">허용된 Google 계정으로 로그인하세요.</p>
+                <div id="gsi-button-container"></div>
+            </div>
+            <div id="auth-forbidden-panel" style="display: none;">
+                <p class="auth-forbidden-msg">사용할 수 없습니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrapper">
+    <!-- 상단 글로벌 탭 바 -->
+    <header class="global-tab-bar">
+        <nav class="global-tab-nav" id="global-tab-nav">
+            <button class="global-tab active" data-tab="youtube">
+                <i class="fa-brands fa-youtube"></i> youtube&amp;게시글
+            </button>
+            <button class="global-tab" data-tab="photos">
+                <i class="fa-brands fa-google"></i> Google Photo
+            </button>
+            <button class="global-tab" data-tab="test">
+                <i class="fa-solid fa-images"></i> 사진보기
+            </button>
+            <button class="global-tab" data-tab="yt-save">
+                <i class="fa-solid fa-circle-down" style="color:#ef4444;"></i> youtube 동영상 저장하기
+            </button>
+        </nav>
+        <button id="global-settings-btn" class="global-settings-btn" title="환경 설정" style="flex-shrink:0; margin-left:auto;">
+            <i class="fa-solid fa-gear"></i>
+            <span>환경 설정</span>
+        </button>
+    </header>
+
+    <div class="app-container">
+        <!-- Area 1: Sidebar -->
+        <aside class="sidebar" id="sidebar" style="position: relative;">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-bars hamburger-btn" id="hamburger-btn" title="Toggle Sidebar"></i>
+                <span class="logo-text">승유 Storage</span>
+                <div class="tree-controls menu-text">
+                    <button id="expand-all-btn" class="tree-ctrl-btn" title="모두 펼치기">
+                        <i class="fa-solid fa-angles-down"></i>
+                    </button>
+                    <button id="collapse-all-btn" class="tree-ctrl-btn" title="모두 접기">
+                        <i class="fa-solid fa-angles-up"></i>
+                    </button>
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <!-- rendered by JS -->
+            </nav>
+            <div class="sidebar-footer" id="add-root-node-btn" style="padding: 10px 20px; cursor: pointer; display: flex; align-items: center; color: var(--text-muted); transition: color 0.2s; font-size: 0.9rem;">
+                <i class="fa-solid fa-plus" style="margin-right: 12px; width: 24px; text-align: center; font-size: 0.8rem;"></i>
+                <span class="menu-text" style="font-weight: 500;">메뉴 추가</span>
+            </div>
+            <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-nav">
+                <h2 id="current-menu-title" style="display:none;">Home</h2>
+                <div class="search-wrapper" id="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" class="search-input" placeholder="메뉴, 게시글 검색..." autocomplete="off">
+                    <div class="search-results" id="search-results" style="display:none;"></div>
+                </div>
+            </header>
+
+            <div class="split-view" id="split-view">
+                <!-- Area 2: Item List -->
+                <div class="split-left" id="split-left">
+                    <div class="item-list-header">
+                        <h3>게시글</h3>
+                        <button id="add-item-btn" class="btn btn-sm btn-primary" disabled><i class="fa-solid fa-plus"></i> New</button>
+                    </div>
+                    <ul class="item-list" id="item-list"></ul>
+                </div>
+
+                <!-- Area 3: Details Pane -->
+                <div class="split-right" id="split-right">
+                    <div class="form-container glass-panel" id="form-container" style="display: none;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:16px; flex-wrap:wrap;">
+                            <h3 id="form-title" style="font-weight:600; color:var(--text-color); margin:0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;"></h3>
+                            <div id="form-actions-top" style="display:flex; gap:8px; flex-shrink:0;"></div>
+                        </div>
+                        <form id="item-form">
+                            <input type="hidden" id="item-id">
+                            <div id="dynamic-fields-container"></div>
+                        </form>
+                    </div>
+                    <div class="empty-state" id="empty-state">
+                        <i class="fa-regular fa-folder-open fa-3x"></i>
+                        <p style="margin-top: 15px;">정보를 열거나 등록해주세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Photo Panel -->
+            <div id="google-photo-panel" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+                <!-- 상단 툴바 -->
+                <div class="gp-toolbar">
+                    <button id="gp-load-btn" class="btn btn-primary">
+                        <i class="fa-brands fa-google"></i> Picker로 사진 선택
+                    </button>
+                    <span id="gp-status" class="gp-status-text"></span>
+                    <button id="gp-download-btn" class="btn btn-secondary" style="margin-left:auto;" disabled>
+                        <i class="fa-solid fa-download"></i> 선택 다운로드
+                    </button>
+                </div>
+                <!-- 본문: 좌(날짜 트리) + 우(썸네일 그리드) -->
+                <div class="gp-body">
+                    <div class="gp-tree-panel" id="gp-tree-panel">
+                        <p class="gp-empty-msg">구글 포토 불러오기를 클릭하세요.</p>
+                    </div>
+                    <div class="gp-photo-panel" id="gp-photo-panel">
+                        <p class="gp-empty-msg">날짜를 선택하세요.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사진보기 Panel -->
+            <div id="test-panel" style="display:none; flex:1; overflow:hidden; flex-direction:row;">
+
+                    <!-- ① 좌 패널 : 폴더 트리 -->
+                    <div id="photo-left-panel"
+                         style="width:260px; min-width:160px; max-width:400px; flex:0 0 260px;
+                                display:flex; flex-direction:column; overflow:hidden; background:#fff;
+                                border-right:1px solid var(--border-color);">
+
+                        <!-- 헤더 -->
+                        <div style="padding:14px 16px 10px; border-bottom:1px solid var(--border-color); flex-shrink:0;
+                                    display:flex; align-items:center; justify-content:space-between;">
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-color); display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-folder-tree" style="color:var(--accent-color);"></i>
+                                사진 폴더
+                            </div>
+                            <div style="display:flex; gap:2px;">
+                                <button id="photo-add-root-folder-btn" title="루트 폴더 추가"
+                                        style="background:none; border:none; cursor:pointer; padding:4px 6px;
+                                               color:var(--text-muted); border-radius:4px; transition:background 0.15s;"
+                                        onmouseenter="this.style.background='var(--hover-bg)'"
+                                        onmouseleave="this.style.background=''">
+                                    <i class="fa-solid fa-folder-plus" style="font-size:0.82rem;"></i>
+                                </button>
+                                <button id="photo-refresh-btn" title="새로고침"
+                                        style="background:none; border:none; cursor:pointer; padding:4px 6px;
+                                               color:var(--text-muted); border-radius:4px; transition:background 0.15s;"
+                                        onmouseenter="this.style.background='var(--hover-bg)'"
+                                        onmouseleave="this.style.background=''">
+                                    <i class="fa-solid fa-rotate-right" style="font-size:0.82rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 루트 드롭존 (폴더 드래그 중에만 표시) -->
+                        <div id="photo-root-dropzone"
+                             style="display:none; margin:4px 6px; padding:7px 10px; border-radius:6px;
+                                    border:2px dashed #cbd5e1; color:#94a3b8; font-size:0.8rem;
+                                    align-items:center; gap:6px; cursor:default; transition:all 0.15s;
+                                    flex-shrink:0;">
+                            <i class="fa-solid fa-house" style="font-size:0.75rem;"></i>
+                            루트 레벨로 이동
+                        </div>
+
+                        <!-- 폴더 트리 -->
+                        <div id="photo-folder-list" style="flex:1; overflow-y:auto; padding:6px 4px;">
+                            <p class="gp-empty-msg" style="padding:20px;">
+                                <i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>불러오는 중...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 리사이즈 핸들 -->
+                    <div id="photo-panel-resizer"
+                         style="width:5px; flex-shrink:0; cursor:col-resize;
+                                background:var(--border-color); transition:background 0.15s;"
+                         onmouseenter="this.style.background='var(--accent-color)'"
+                         onmouseleave="this.style.background='var(--border-color)'"></div>
+
+                    <!-- ② 우 패널 : 이미지 크기 슬라이더 + 사진 그리드 -->
+                    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+
+                        <!-- 이미지 크기 조절 -->
+                        <div style="padding:10px 20px; border-bottom:1px solid var(--border-color); flex-shrink:0; background:#fff;">
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <i class="fa-regular fa-image" style="color:var(--text-muted); font-size:0.85rem; flex-shrink:0;"></i>
+                                <span style="font-size:0.82rem; color:var(--text-muted); white-space:nowrap; flex-shrink:0;">이미지 크기</span>
+                                <input id="photo-size-slider" type="range" min="80" max="400" value="160"
+                                       style="flex:1; cursor:pointer; accent-color:var(--accent-color); height:4px;">
+                                <span id="photo-size-label"
+                                      style="font-size:0.8rem; color:var(--accent-color); font-weight:600;
+                                             min-width:42px; text-align:right; flex-shrink:0;">160px</span>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; min-height:20px;">
+                                <div id="photo-search-count" style="font-size:0.82rem; color:var(--text-muted);"></div>
+                                <div style="display:flex; gap:6px;">
+                                    <button id="photo-move-btn"
+                                            style="display:none; align-items:center; gap:6px; background:#2563eb; color:#fff;
+                                                   border:none; border-radius:6px; padding:4px 12px; font-size:0.8rem;
+                                                   font-weight:600; cursor:pointer; transition:background 0.15s;"
+                                            onmouseenter="this.style.background='#1d4ed8'"
+                                            onmouseleave="this.style.background='#2563eb'">
+                                        <i class="fa-solid fa-folder-arrow-up"></i>
+                                        <span id="photo-move-label">이동</span>
+                                    </button>
+                                    <button id="photo-delete-btn"
+                                            style="display:none; align-items:center; gap:6px; background:#ef4444; color:#fff;
+                                                   border:none; border-radius:6px; padding:4px 12px; font-size:0.8rem;
+                                                   font-weight:600; cursor:pointer; transition:background 0.15s;"
+                                            onmouseenter="this.style.background='#dc2626'"
+                                            onmouseleave="this.style.background='#ef4444'">
+                                        <i class="fa-solid fa-trash"></i>
+                                        <span id="photo-delete-label">삭제</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 결과 그리드 -->
+                        <div id="photo-search-results" class="gp-photo-panel" style="flex:1; overflow-y:auto; padding:16px;">
+                            <p class="gp-empty-msg">폴더를 선택하세요.</p>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- 사진 라이트박스 -->
+            <div id="photo-lightbox"
+                 style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+                        z-index:9999; align-items:center; justify-content:center; cursor:zoom-out;"
+                 onclick="this.style.display='none'; var v=document.getElementById('photo-lightbox-video'); if(v){v.pause(); v.src='';} var f=document.getElementById('photo-lightbox-video-fallback'); if(f){f.remove();}">
+                <button id="photo-lightbox-prev"
+                        onclick="event.stopPropagation(); photoLightboxNav(-1);"
+                        style="position:absolute; left:20px; top:50%; transform:translateY(-50%);
+                               background:rgba(255,255,255,0.15); border:none; color:#fff;
+                               font-size:2rem; cursor:pointer; width:52px; height:52px;
+                               border-radius:50%; display:flex; align-items:center; justify-content:center;
+                               transition:background 0.15s; z-index:1; line-height:1;"
+                        onmouseenter="this.style.background='rgba(255,255,255,0.28)'"
+                        onmouseleave="this.style.background='rgba(255,255,255,0.15)'">&#8249;</button>
+                <img id="photo-lightbox-img"
+                     style="max-width:88vw; max-height:88vh; border-radius:8px;
+                            box-shadow:0 8px 40px rgba(0,0,0,0.6); display:block; cursor:default;"
+                     onclick="event.stopPropagation();">
+                <video id="photo-lightbox-video"
+                       style="max-width:88vw; max-height:88vh; border-radius:8px;
+                              box-shadow:0 8px 40px rgba(0,0,0,0.6); display:none; cursor:default;"
+                       controls
+                       onclick="event.stopPropagation();"></video>
+                <button id="photo-lightbox-next"
+                        onclick="event.stopPropagation(); photoLightboxNav(1);"
+                        style="position:absolute; right:20px; top:50%; transform:translateY(-50%);
+                               background:rgba(255,255,255,0.15); border:none; color:#fff;
+                               font-size:2rem; cursor:pointer; width:52px; height:52px;
+                               border-radius:50%; display:flex; align-items:center; justify-content:center;
+                               transition:background 0.15s; z-index:1; line-height:1;"
+                        onmouseenter="this.style.background='rgba(255,255,255,0.28)'"
+                        onmouseleave="this.style.background='rgba(255,255,255,0.15)'">&#8250;</button>
+                <div id="photo-lightbox-caption"
+                     style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+                            background:rgba(0,0,0,0.6); color:#fff; padding:6px 16px;
+                            border-radius:20px; font-size:0.82rem; white-space:nowrap;
+                            max-width:80vw; overflow:hidden; text-overflow:ellipsis;"></div>
+                <button id="photo-lightbox-delete"
+                        onclick="event.stopPropagation(); photoLightboxDelete();"
+                        style="position:absolute; top:18px; right:18px;
+                               background:rgba(239,68,68,0.75); border:none; color:#fff;
+                               font-size:0.85rem; cursor:pointer; padding:7px 14px;
+                               border-radius:8px; display:flex; align-items:center; gap:6px;
+                               transition:background 0.15s; z-index:1;"
+                        onmouseenter="this.style.background='rgba(239,68,68,1)'"
+                        onmouseleave="this.style.background='rgba(239,68,68,0.75)'">
+                    <i class="fa-solid fa-trash"></i> 삭제
+                </button>
+            </div>
+
+            <!-- YouTube 동영상 저장 Panel -->
+            <div id="yt-save-panel" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
+
+                <!-- 입력 영역 -->
+                <div style="padding:16px 24px 14px; border-bottom:1px solid var(--border-color); background:#fff; flex-shrink:0;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1;
+                                    background:#f8fafc; border:1.5px solid var(--border-color);
+                                    border-radius:10px; padding:0 16px; transition:border-color 0.2s;"
+                             id="yt-url-wrap">
+                            <i class="fa-brands fa-youtube" style="color:#ef4444; font-size:1.15rem; flex-shrink:0;"></i>
+                            <input id="yt-url-input" type="text"
+                                   placeholder="https://www.youtube.com/watch?v=..."
+                                   style="flex:1; border:none; background:none; padding:12px 0;
+                                          font-size:0.95rem; color:var(--text-color);
+                                          font-family:inherit; outline:none;">
+                        </div>
+                        <button id="yt-download-btn" class="btn btn-primary" style="flex-shrink:0; padding:11px 22px; font-size:0.95rem;">
+                            <i class="fa-solid fa-circle-down"></i> 저장
+                        </button>
+                    </div>
+
+                    <!-- 상태 + 진행바 -->
+                    <div style="margin-top:10px;">
+                        <div style="display:flex; align-items:center; gap:8px; min-height:20px;">
+                            <span id="yt-status-icon" style="font-size:0.85rem;"></span>
+                            <span id="yt-status-text" style="font-size:0.83rem; color:var(--text-muted);">YouTube URL을 입력하고 저장 버튼을 클릭하세요.</span>
+                        </div>
+                        <div id="yt-progress-wrap" style="display:none; margin-top:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+                                <span id="yt-progress-label" style="font-size:0.8rem; color:var(--text-muted);">다운로드 중...</span>
+                                <span id="yt-progress-pct" style="font-size:0.8rem; font-weight:700; color:var(--accent-color);">0%</span>
+                            </div>
+                            <div style="height:6px; background:#e2e8f0; border-radius:999px; overflow:hidden;">
+                                <div id="yt-progress-bar" style="height:100%; width:0%; background:var(--accent-color); border-radius:999px; transition:width 0.4s ease;"></div>
+                            </div>
+                            <div id="yt-progress-log" style="margin-top:4px; font-size:0.7rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 저장된 파일 목록 -->
+                <div style="flex:1; overflow-y:auto; padding:16px 24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                        <h3 style="font-size:0.92rem; font-weight:600; color:var(--text-color); margin:0; display:flex; align-items:center; gap:7px;">
+                            <i class="fa-solid fa-folder-open" style="color:var(--accent-color);"></i>
+                            저장된 파일
+                        </h3>
+                        <button id="yt-refresh-btn" title="새로고침"
+                                style="background:none; border:1px solid var(--border-color); cursor:pointer;
+                                       color:var(--text-muted); padding:4px 10px; border-radius:6px;
+                                       font-size:0.8rem; transition:background 0.15s; display:flex; align-items:center; gap:5px;"
+                                onmouseenter="this.style.background='var(--hover-bg)'" onmouseleave="this.style.background=''">
+                            <i class="fa-solid fa-rotate-right"></i> 새로고침
+                        </button>
+                    </div>
+                    <div id="yt-file-list">
+                        <p class="gp-empty-msg">저장된 파일이 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-container" style="display:none; box-sizing:border-box; overflow:hidden; flex-direction:column; background:#fff;">
+                <!-- 헤더 -->
+                <div style="display:flex; align-items:center; border-bottom:1px solid var(--border-color); padding:16px 28px; flex-shrink:0; gap:12px;">
+                    <i class="fa-solid fa-gear" style="color:var(--accent-color); font-size:1.1rem;"></i>
+                    <h3 style="font-weight:600; font-size:1.15rem; margin:0; flex:1;">환경 설정</h3>
+                    <button id="close-settings-btn" class="btn btn-sm btn-outline"><i class="fa-solid fa-xmark"></i> 닫기</button>
+                </div>
+                <!-- 2패널 레이아웃 -->
+                <div class="settings-layout">
+                    <!-- 좌측: 설정 메뉴 -->
+                    <div class="settings-nav">
+                        <div class="settings-nav-item active" data-section="photos">
+                            <i class="fa-solid fa-images"></i>
+                            <span>사진보기</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="youtube">
+                            <i class="fa-brands fa-youtube"></i>
+                            <span>youtube&amp;게시글</span>
+                        </div>
+                    </div>
+                    <!-- 우측: 설정 내용 -->
+                    <div class="settings-content">
+                        <div id="settings-panel-photos" class="settings-panel"></div>
+                        <div id="settings-panel-youtube" class="settings-panel" style="display:none;">
+                            <h4 style="margin-bottom:8px; color:var(--accent-color); font-size:1.05rem;">
+                                <i class="fa-brands fa-youtube"></i> YouTube 연결 관리
+                            </h4>
+                            <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.9rem; line-height:1.6;">
+                                동기화 스위치를 켜고 재생목록 URL을 저장하면, 사이드바의 해당 메뉴 옆에 <b>[적용]</b> 버튼이 표시됩니다.
+                            </p>
+                            <div id="settings-youtube-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    </div><!-- /.page-wrapper -->
+
+    <!-- 폴더 선택 모달 -->
+    <div id="dir-picker-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:14px; width:520px; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,0.22); overflow:hidden;">
+            <div style="padding:18px 20px 14px; border-bottom:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                <i class="fa-solid fa-folder-tree" style="color:#f59e0b; font-size:1rem;"></i>
+                <span style="font-weight:600; font-size:1rem; flex:1;">폴더 선택</span>
+                <button id="dir-picker-cancel" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:#94a3b8; padding:2px 6px;">&times;</button>
+            </div>
+            <div id="dir-picker-current" style="padding:8px 16px; font-size:0.8rem; color:#64748b; background:#f8fafc; border-bottom:1px solid rgba(0,0,0,0.06); flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+            <div id="dir-picker-list" style="flex:1; overflow-y:auto; padding:6px 0; min-height:200px;"></div>
+            <div style="padding:12px 16px; border-top:1px solid rgba(0,0,0,0.08); display:flex; justify-content:flex-end; gap:8px; flex-shrink:0;">
+                <button id="dir-picker-up" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-up"></i> 상위</button>
+                <button id="dir-picker-confirm" class="btn btn-primary btn-sm">이 폴더 선택</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Icon/Color Picker Modal -->
+    <div id="node-picker-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:12px; padding:28px; width:420px; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+            <h3 id="picker-modal-title" style="margin-bottom:20px; font-size:1.1rem; font-weight:600; color:#1e293b;">메뉴 설정</h3>
+            <div id="picker-name-section" style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:6px; font-size:0.85rem; color:#64748b; font-weight:500;">메뉴 이름</label>
+                <input id="picker-title-input" type="text" placeholder="메뉴 이름 입력..."
+                    style="width:100%; padding:10px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:0.95rem; outline:none; color:#1e293b; box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; margin-bottom:10px; font-size:0.85rem; color:#64748b; font-weight:500;">아이콘 선택</label>
+                <div id="picker-icon-grid" style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;"></div>
+            </div>
+            <div style="margin-bottom:24px;">
+                <label style="display:block; margin-bottom:10px; font-size:0.85rem; color:#64748b; font-weight:500;">색상 선택</label>
+                <div id="picker-color-palette" class="color-palette"></div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button id="picker-cancel-btn" class="btn btn-secondary">취소</button>
+                <button id="picker-confirm-btn" class="btn btn-primary">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
