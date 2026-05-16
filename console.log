@@ -1,0 +1,16 @@
+Message: NavigationDuplicated: Avoided redundant navigation to current location: "/signin".
+Source: file:///C:/Program%20Files/SketchUp/SketchUp%202024/welcomescreen/app.bundle.js
+Line: 42
+-----------------------
+Message: NavigationDuplicated: Avoided redundant navigation to current location: "/offline".
+Source: file:///C:/Program%20Files/SketchUp/SketchUp%202024/welcomescreen/app.bundle.js
+Line: 42
+-----------------------
+Message: NavigationDuplicated: Avoided redundant navigation to current location: "/signin".
+Source: file:///C:/Program%20Files/SketchUp/SketchUp%202024/welcomescreen/app.bundle.js
+Line: 42
+-----------------------
+Message: advanced
+Source: https://licensing.sketchup.com/assets/index-CU9lbB5b.js
+Line: 18
+-----------------------
